@@ -17,9 +17,9 @@
 
 ## 🛠️ Tech Stack
 
-| Frontend     | Backend     | Real-time & Audio |
-|--------------|-------------|------------------|
-| HTML, CSS, JS | FastAPI     | WebSockets, WebRTC |
+| Frontend     | Backend     | Real-time  |
+|--------------|-------------|-------------|
+| HTML, CSS, JS | FastAPI     | WebSockets |
 
 ---
 
