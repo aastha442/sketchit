@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sketch It - Fairycore Drawing Board</title>
+  <link href="https://fonts.googleapis.com/css2?family=Handlee&family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(to bottom, #fbeaff, #fdf6fd);
+      font-family: 'Handlee', cursive;
+    }
+    h1 {
+      margin: 20px;
+      color: #aa6cbe;
+      text-shadow: 1px 1px #fff;
+      font-family: 'Pacifico', cursive;
+    }
+    canvas {
+      border: 3px dashed #dda0dd;
+      background-color: #fffafc;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #e8c5ec;
+      cursor: crosshair;
+    }
+    .controls {
+      margin: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    button, select, input[type="color"], input[type="text"] {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      background-color: #f3d5ec;
+      color: #5c3c72;
+      cursor: pointer;
+      box-shadow: 1px 1px 3px #ccc;
+      transition: 0.2s;
+      font-family: 'Handlee', cursive;
+    }
+    button:hover, select:hover {
+      background-color: #e4c2e7;
+    }
+    #chatBox {
+      width: 80%;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 2px dashed #dda0dd;
+      border-radius: 8px;
+      background: #fffafc;
+      padding: 10px;
+      margin: 10px 0;
+      box-shadow: 0 0 5px #e2c3e9;
+    }
+    .chat-input {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    #chatInput {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>✨ Sketch It ✨</h1>
+
+  <div class="controls">
+    <button onclick="sendClearCommand()">Clear</button>
+    <button onclick="toggleEraser()" id="eraserBtn">Eraser: Off</button>
+    <label>Color <input type="color" id="colorPicker" value="#aa6cbe"></label>
+    <label>Pen Width
+      <select id="penWidth">
+        <option value="2">Thin</option>
+        <option value="5" selected>Medium</option>
+        <option value="10">Thick</option>
+      </select>
+    </label>
+  </div>
+
+  <canvas id="board" width="800" height="500"></canvas>
+
+  <div id="chatBox"></div>
+  <div class="chat-input">
+    <input type="text" id="chatInput" placeholder="Type a message..." />
+    <button onclick="sendChat()">Send</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    const colorPicker = document.getElementById('colorPicker');
+    const penWidth = document.getElementById('penWidth');
+    const eraserBtn = document.getElementById('eraserBtn');
+    const chatBox = document.getElementById('chatBox');
+    const chatInput = document.getElementById('chatInput');
+
+    let drawing = false;
+    let isErasing = false;
+    let socket = new WebSocket("ws://192.168.114.164:8000/ws");
+
+    socket.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+
+      if (message.type === "clear") {
+        clearCanvas();
+      } else if (message.type === "chat") {
+        addChatMessage("👤 " + message.text);
+      } else {
+        const {x, y, color, width} = message;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+      }
+    };
+
+    canvas.addEventListener('mousedown', (e) => {
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!drawing) return;
+      const stroke = {
+        x: e.offsetX,
+        y: e.offsetY,
+        color: isErasing ? "#fffafc" : colorPicker.value,
+        width: parseInt(penWidth.value),
+      };
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.width;
+      ctx.lineTo(stroke.x, stroke.y);
+      ctx.stroke();
+      socket.send(JSON.stringify(stroke));
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      drawing = false;
+      ctx.beginPath();
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      drawing = false;
+      ctx.beginPath();
+    });
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function sendClearCommand() {
+      clearCanvas();
+      socket.send(JSON.stringify({ type: "clear" }));
+    }
+
+    function toggleEraser() {
+      isErasing = !isErasing;
+      eraserBtn.textContent = isErasing ? "Eraser: On" : "Eraser: Off";
+    }
+
+    function sendChat() {
+      const text = chatInput.value.trim();
+      if (text !== "") {
+        socket.send(JSON.stringify({ type: "chat", text }));
+        addChatMessage("🧑‍🎨 You: " + text);
+        chatInput.value = "";
+      }
+    }
+
+    function addChatMessage(msg) {
+      const p = document.createElement("p");
+      p.textContent = msg;
+      chatBox.appendChild(p);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Send message on Enter key
+    chatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendChat();
+    });
+  </script>
+</body>
+</html>
