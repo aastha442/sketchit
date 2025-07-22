@@ -25,7 +25,7 @@
 
 ## 📸 Preview
 
-![SketchIt Preview](https://github.com/aastha442/sketchit/assets/preview.gif) 
+the demo is in assests 
 
 ---
 
