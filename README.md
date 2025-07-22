@@ -9,9 +9,8 @@
 ## 🚀 Features
 
 - ✅ **Real-time Canvas**: Draw and collaborate instantly with connected peers.
-- 🎤 **Audio Calling**: Built-in audio communication using WebRTC.
-- 📄 **Export to PDF**: Save your whiteboard as a PDF snapshot with a single click.
 - 📱 **Mobile Friendly**: Fully responsive UI for phones and tablets.
+- Real-time Chat: for interactive messaging
 
 ---
 
